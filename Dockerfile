@@ -1,0 +1,74 @@
+# OpenClaw Docker 镜像
+FROM node:22-slim
+
+# 切换 root 用户
+USER root
+
+# 设置工作目录
+WORKDIR /root
+
+# 安装必要的系统依赖
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    bash \
+    ca-certificates \
+    chromium \
+    curl \
+    fonts-liberation \
+    fonts-noto-cjk \
+    fonts-noto-color-emoji \
+    git \
+    gosu \
+    jq \
+    python3 \
+    socat \
+    tini \
+    unzip \
+    websockify \
+  && rm -rf /var/lib/apt/lists/*
+
+# 更新 npm 到最新版本
+RUN npm install -g npm@latest
+
+# 安装 bun
+RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash
+ENV BUN_INSTALL="/usr/local"
+ENV PATH="$BUN_INSTALL/bin:$PATH"
+
+# 安装 qmd
+RUN bun install -g https://github.com/tobi/qmd
+
+ARG OPENCLAW_VERSION=2026.2.17
+
+# 安装 OpenClaw 和 claude-code
+RUN npm install -g openclaw@${OPENCLAW_VERSION} @anthropic-ai/claude-code
+
+# 安装 Playwright 和 Chromium
+RUN npm install -g playwright && npx playwright install chromium --with-deps
+
+# 安装 playwright-extra 和 puppeteer-extra-plugin-stealth
+RUN npm install -g playwright-extra puppeteer-extra-plugin-stealth
+
+# 安装 bird
+RUN npm install -g @steipete/bird
+
+# 创建配置目录并设置权限
+RUN mkdir -p /root/.openclaw/workspace
+
+# 安装钉钉插件 - 使用 timeout 防止卡住，忽略错误继续构建
+RUN mkdir -p /root/.openclaw/extensions && \
+    cd /root/.openclaw/extensions && \
+    git clone https://github.com/soimy/openclaw-channel-dingtalk.git && \
+    cd openclaw-channel-dingtalk && \
+    npm install && \
+    timeout 300 openclaw plugins install -l . || true
+
+# 设置基础环境变量
+ENV HOME=/root \
+    TERM=xterm-256color \
+    NODE_PATH=/usr/local/lib/node_modules
+
+# 暴露端口
+EXPOSE 18789 18790
+
+ENTRYPOINT ["openclaw", "gateway", "--allow-unconfigured"]
