@@ -7,6 +7,15 @@ USER root
 # 设置工作目录
 WORKDIR /root
 
+# 设置基础环境变量
+ENV HOME=/root
+ENV TERM=xterm-256color
+ENV NODE_PATH=/usr/local/lib/node_modules
+ENV CHROME_BIN=/usr/bin/chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV NODE_ENV=production
+
 # 安装必要的系统依赖
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -25,7 +34,8 @@ RUN apt-get update \
     tini \
     unzip \
     websockify \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /tmp/*
 
 # 更新 npm 到最新版本
 RUN npm install -g npm@latest
@@ -57,18 +67,17 @@ RUN mkdir -p /root/.openclaw/workspace
 
 # 安装钉钉插件 - 使用 timeout 防止卡住，忽略错误继续构建
 RUN mkdir -p /root/.openclaw/extensions && \
-    cd /root/.openclaw/extensions && \
-    git clone https://github.com/soimy/openclaw-channel-dingtalk.git && \
-    cd openclaw-channel-dingtalk && \
-    npm install && \
-    timeout 300 openclaw plugins install -l . || true
+    timeout 300 openclaw plugins install @soimy/dingtalk || true
 
-# 设置基础环境变量
-ENV HOME=/root \
-    TERM=xterm-256color \
-    NODE_PATH=/usr/local/lib/node_modules
+# 数据持久化目录
+VOLUME ["/root/.openclaw"]
 
 # 暴露端口
-EXPOSE 18789 18790
+EXPOSE 18789
 
-ENTRYPOINT ["openclaw", "gateway", "--allow-unconfigured"]
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:18789/health || exit 1
+
+# 默认启动命令
+CMD ["openclaw"]
