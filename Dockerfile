@@ -40,18 +40,11 @@ RUN apt-get update \
 # 更新 npm 到最新版本
 RUN npm install -g npm@latest
 
-# 安装 bun
-RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash
-ENV BUN_INSTALL="/usr/local"
-ENV PATH="$BUN_INSTALL/bin:$PATH"
-
 # 安装 qmd
-RUN bun install -g https://github.com/tobi/qmd
+RUN npm install -g @tobilu/qmd
 
-ARG OPENCLAW_VERSION=2026.2.17
-
-# 安装 OpenClaw 和 claude-code
-RUN npm install -g openclaw@${OPENCLAW_VERSION} @anthropic-ai/claude-code
+# 安装 claude-code
+RUN npm install -g @anthropic-ai/claude-code
 
 # 安装 Playwright 和 Chromium
 RUN npm install -g playwright && npx playwright install chromium --with-deps
@@ -61,6 +54,10 @@ RUN npm install -g playwright-extra puppeteer-extra-plugin-stealth
 
 # 安装 bird
 RUN npm install -g @steipete/bird
+
+# 安装 OpenClaw
+ARG OPENCLAW_VERSION=2026.2.17
+RUN npm install -g openclaw@${OPENCLAW_VERSION}
 
 # 创建配置目录并设置权限
 RUN mkdir -p /root/.openclaw/workspace
