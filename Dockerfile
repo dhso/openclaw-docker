@@ -15,6 +15,7 @@ ENV CHROME_BIN=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV NODE_ENV=production
+ENV PATH="/root/.local/bin:${PATH}"
 
 # 安装必要的系统依赖
 RUN apt-get update \
@@ -30,12 +31,17 @@ RUN apt-get update \
     gosu \
     jq \
     python3 \
+    python3-pip \
+    python3-venv \
     socat \
     tini \
     unzip \
     websockify \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /tmp/*
+
+# 安装 uv (Python 包管理器)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 更新 npm 到最新版本
 RUN npm install -g npm@latest
