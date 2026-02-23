@@ -57,7 +57,7 @@ RUN npm install -g @steipete/bird
 
 # 安装 OpenClaw
 ARG OPENCLAW_VERSION=2026.2.17
-RUN npm install -g openclaw@${OPENCLAW_VERSION}
+RUN npm install -g openclaw@${OPENCLAW_VERSION} clawhub
 
 # 创建配置目录并设置权限
 RUN mkdir -p /root/.openclaw/workspace
