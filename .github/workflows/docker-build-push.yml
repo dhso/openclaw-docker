@@ -71,7 +71,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          args: |
+          build-args: |
             OPENCLAW_VERSION=${{ steps.version.outputs.version }}
           
       - name: 输出镜像信息
