@@ -38,6 +38,15 @@ docker run --rm \
 dhso/openclaw:2026.2.17 \
 openclaw config set gateway.auth.token your_token
 
+# 2026.2.17以上版本需要配置dangerouslyAllowHostHeaderOriginFallback，否则启动失败
+docker run --rm \
+-e TZ=Asia/Shanghai \
+-v openclaw_data:/root/.openclaw \
+-v openclaw_cache:/root/.cache \
+--network vps \
+dhso/openclaw:2026.2.25 \
+openclaw config set gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback true
+
 docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
@@ -49,6 +58,7 @@ docker run -d \
 --name claw \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
+-v openclaw_cache:/root/.cache \
 --restart=unless-stopped \
 dhso/openclaw:2026.2.17 \
 openclaw gateway run
