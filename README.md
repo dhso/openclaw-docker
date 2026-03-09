@@ -63,9 +63,10 @@ docker run -d \
 dhso/openclaw:latest \
 openclaw gateway run
 
+# 4. 访问 http://ip:18789
+
 ```
 
-# 4. 访问 http://ip:18789
 
 # build
 ```bash
