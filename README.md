@@ -59,10 +59,13 @@ docker run -d \
 -v openclaw_data:/root/.openclaw \
 -v openclaw_cache:/root/.cache \
 --restart=unless-stopped \
+-p 18789:18789 \
 dhso/openclaw:latest \
 openclaw gateway run
 
 ```
+
+# 4. 访问 http://ip:18789
 
 # build
 ```bash
