@@ -8,7 +8,7 @@ Your own personal AI assistant. Any OS. Any Platform. The lobster way. 🦞
 docker run --rm -it \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw onboard
 
 # 按向导完成：选择模型 → 配置 API 密钥 → 设置聊天通道
@@ -17,25 +17,25 @@ openclaw onboard
 docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw config set gateway.mode local
 
 docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw config set gateway.bind lan
 
 docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw config set gateway.trustedProxies '["127.0.0.1", "::1", "10.0.0.0/8"]'
 
 docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw config set gateway.auth.token your_token
 
 # 2026.2.17以上版本需要配置dangerouslyAllowHostHeaderOriginFallback，否则启动失败
@@ -43,14 +43,13 @@ docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
 -v openclaw_cache:/root/.cache \
---network vps \
-dhso/openclaw:2026.2.25 \
+dhso/openclaw:latest \
 openclaw config set gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback true
 
 docker run --rm \
 -e TZ=Asia/Shanghai \
 -v openclaw_data:/root/.openclaw \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw doctor --fix
 
 # 3. 启动（守护进程模式，容器会一直运行）
@@ -60,7 +59,7 @@ docker run -d \
 -v openclaw_data:/root/.openclaw \
 -v openclaw_cache:/root/.cache \
 --restart=unless-stopped \
-dhso/openclaw:2026.2.17 \
+dhso/openclaw:latest \
 openclaw gateway run
 
 ```
