@@ -44,7 +44,7 @@ RUN apt-get update \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 更新 npm 到最新版本
-RUN npm install -g npm@latest
+# RUN npm install -g npm@latest
 
 # 安装 qmd
 RUN npm install -g @tobilu/qmd
