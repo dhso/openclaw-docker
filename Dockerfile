@@ -49,17 +49,9 @@ RUN npm install -g npm@latest
 # 安装 qmd
 RUN npm install -g @tobilu/qmd
 
-# 安装 claude-code
-RUN npm install -g @anthropic-ai/claude-code
-
-# 安装 Playwright 和 Chromium
-RUN npm install -g playwright && npx playwright install chromium --with-deps
-
-# 安装 playwright-extra 和 puppeteer-extra-plugin-stealth
-RUN npm install -g playwright-extra puppeteer-extra-plugin-stealth
-
-# 安装 bird
-RUN npm install -g @steipete/bird
+# 安装 playwright 以及插件
+RUN npm install -g playwright playwright-extra puppeteer-extra-plugin-stealth \
+  && npx playwright install chromium --with-deps
 
 # 安装 OpenClaw
 ARG OPENCLAW_VERSION=2026.2.17
