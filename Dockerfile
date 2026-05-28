@@ -1,5 +1,5 @@
 # OpenClaw Docker 镜像
-FROM node:22-slim
+FROM node:24-slim
 
 # 切换 root 用户
 USER root
