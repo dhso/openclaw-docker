@@ -1,1 +1,9 @@
 # Add extra Python packages here, one requirement per line.
+markitdown[all]
+pdf2image
+pandas
+pikepdf
+openpyxl
+python-docx
+python-pptx
+cairosvg

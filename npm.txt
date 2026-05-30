@@ -1,1 +1,2 @@
 # Add extra global npm packages here, one package per line.
+@modelcontextprotocol/sdk
