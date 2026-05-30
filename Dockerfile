@@ -62,7 +62,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN curl -fsSL https://bun.com/install | bash
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-COPY apt.txt requirement.txt npm.txt bun.txt openclaw-plugins.txt /root/.openclaw/
+COPY apt.txt uv.txt npm.txt bun.txt openclaw-plugins.txt /usr/local/share/openclaw-docker/defaults/
 
 # 更新 npm 到最新版本
 # RUN npm install -g npm@latest

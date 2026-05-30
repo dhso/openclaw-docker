@@ -2,6 +2,7 @@
 set -euo pipefail
 
 OPENCLAW_HOME=${OPENCLAW_HOME:-/root/.openclaw}
+DEFAULT_DEPS_DIR=${OPENCLAW_DEFAULT_DEPS_DIR:-/usr/local/share/openclaw-docker/defaults}
 EXTRA_STATE_DIR=${OPENCLAW_EXTRA_STATE_DIR:-/usr/local/share/openclaw-docker/extra-deps}
 APT_CACHE_DIR=${OPENCLAW_APT_CACHE_DIR:-/root/.cache/apt}
 PIP_CACHE_DIR=${PIP_CACHE_DIR:-/root/.cache/pip}
@@ -31,12 +32,25 @@ mkdir -p \
   "${APT_CACHE_DIR}/archives/partial" \
   "${APT_CACHE_DIR}/lists/partial"
 
-touch \
-  "${OPENCLAW_HOME}/apt.txt" \
-  "${OPENCLAW_HOME}/requirement.txt" \
-  "${OPENCLAW_HOME}/npm.txt" \
-  "${OPENCLAW_HOME}/bun.txt" \
-  "${OPENCLAW_HOME}/openclaw-plugins.txt"
+init_dependency_file() {
+  local name=$1
+  local target="${OPENCLAW_HOME}/${name}"
+  local source="${DEFAULT_DEPS_DIR}/${name}"
+
+  [ -s "${target}" ] && return 0
+
+  if [ -f "${source}" ]; then
+    cp "${source}" "${target}"
+  else
+    : > "${target}"
+  fi
+}
+
+init_dependency_file apt.txt
+init_dependency_file uv.txt
+init_dependency_file npm.txt
+init_dependency_file bun.txt
+init_dependency_file openclaw-plugins.txt
 
 trim_line() {
   local line=$1
@@ -53,6 +67,7 @@ collect_entries() {
   shift
 
   local file line entry
+  local seen_entries=""
   for file in "$@"; do
     [ -f "${file}" ] || continue
 
@@ -63,6 +78,11 @@ collect_entries() {
       if [ "${substitute_version}" = "true" ]; then
         entry=${entry//\$\{OPENCLAW_VERSION\}/${OPENCLAW_VERSION:-}}
       fi
+
+      if printf '%s' "${seen_entries}" | grep -Fxq -- "${entry}"; then
+        continue
+      fi
+      seen_entries="${seen_entries}${entry}"$'\n'
 
       printf '%s\n' "${entry}"
     done < "${file}"
@@ -108,7 +128,9 @@ install_extra_apt() {
 
   while IFS= read -r package; do
     packages+=("${package}")
-  done < <(collect_entries false "${OPENCLAW_HOME}/apt.txt" "${OPENCLAW_HOME}/apt-packages.txt")
+  done < <(collect_entries false \
+    "${DEFAULT_DEPS_DIR}/apt.txt" \
+    "${OPENCLAW_HOME}/apt.txt")
   [ "${#packages[@]}" -gt 0 ] || return 0
 
   current_hash=$(printf '%s\n' "${packages[@]}" | entries_hash)
@@ -136,34 +158,36 @@ install_extra_apt_packages() {
 
 install_extra_python() {
   local marker="${EXTRA_STATE_DIR}/python.sha256"
-  local current_hash
-  local files=("${OPENCLAW_HOME}/requirement.txt" "${OPENCLAW_HOME}/requirements.txt")
+  local current_hash requirement
+  local requirements=()
 
-  current_hash=$(collect_entries false "${files[@]}" | entries_hash)
-  if [ "${current_hash}" = "$(printf '' | entries_hash)" ]; then
-    return 0
-  fi
+  while IFS= read -r requirement; do
+    requirements+=("${requirement}")
+  done < <(collect_entries false \
+    "${DEFAULT_DEPS_DIR}/uv.txt" \
+    "${OPENCLAW_HOME}/uv.txt")
+  [ "${#requirements[@]}" -gt 0 ] || return 0
 
-  run_once_for_hash "${marker}" "${current_hash}" install_extra_python_packages "${files[@]}"
+  current_hash=$(printf '%s\n' "${requirements[@]}" | entries_hash)
+  run_once_for_hash "${marker}" "${current_hash}" install_extra_python_packages "${requirements[@]}"
 }
 
 install_extra_python_packages() {
-  local files=()
-  local file
+  local requirement_file status
+  requirement_file=$(mktemp)
+  printf '%s\n' "$@" > "${requirement_file}"
 
-  for file in "$@"; do
-    if [ -f "${file}" ] && grep -Eq '^[[:space:]]*[^#[:space:]]' "${file}"; then
-      files+=("-r" "${file}")
-    fi
-  done
-
-  [ "${#files[@]}" -gt 0 ] || return 0
-
+  set +e
   if command -v uv >/dev/null 2>&1; then
-    uv pip install --system "${files[@]}"
+    uv pip install --system -r "${requirement_file}"
   else
-    python3 -m pip install "${files[@]}"
+    python3 -m pip install -r "${requirement_file}"
   fi
+  status=$?
+  set -e
+
+  rm -f "${requirement_file}"
+  return "${status}"
 }
 
 install_extra_npm() {
@@ -173,7 +197,9 @@ install_extra_npm() {
 
   while IFS= read -r package; do
     packages+=("${package}")
-  done < <(collect_entries true "${OPENCLAW_HOME}/npm.txt" "${OPENCLAW_HOME}/npm-globals.txt")
+  done < <(collect_entries true \
+    "${DEFAULT_DEPS_DIR}/npm.txt" \
+    "${OPENCLAW_HOME}/npm.txt")
   [ "${#packages[@]}" -gt 0 ] || return 0
 
   current_hash=$(printf '%s\n' "${packages[@]}" | entries_hash)
@@ -189,7 +215,9 @@ install_extra_bun() {
 
   while IFS= read -r package; do
     packages+=("${package}")
-  done < <(collect_entries true "${OPENCLAW_HOME}/bun.txt" "${OPENCLAW_HOME}/bun-globals.txt")
+  done < <(collect_entries true \
+    "${DEFAULT_DEPS_DIR}/bun.txt" \
+    "${OPENCLAW_HOME}/bun.txt")
   [ "${#packages[@]}" -gt 0 ] || return 0
 
   current_hash=$(printf '%s\n' "${packages[@]}" | entries_hash)
@@ -203,7 +231,9 @@ install_extra_openclaw_plugins() {
 
   while IFS= read -r plugin; do
     plugins+=("${plugin}")
-  done < <(collect_entries true "${OPENCLAW_HOME}/openclaw-plugins.txt" "${OPENCLAW_HOME}/plugins.txt")
+  done < <(collect_entries true \
+    "${DEFAULT_DEPS_DIR}/openclaw-plugins.txt" \
+    "${OPENCLAW_HOME}/openclaw-plugins.txt")
   [ "${#plugins[@]}" -gt 0 ] || return 0
   command -v openclaw >/dev/null 2>&1 || return 0
 
