@@ -1,0 +1,1 @@
+# Add extra global Bun packages here, one package per line.
