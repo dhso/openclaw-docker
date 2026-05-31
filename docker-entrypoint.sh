@@ -5,6 +5,7 @@ OPENCLAW_HOME=${OPENCLAW_HOME:-/root/.openclaw}
 DEFAULT_DEPS_DIR=${OPENCLAW_DEFAULT_DEPS_DIR:-/usr/local/share/openclaw-docker/defaults}
 EXTRA_STATE_DIR=${OPENCLAW_EXTRA_STATE_DIR:-/usr/local/share/openclaw-docker/extra-deps}
 APT_CACHE_DIR=${OPENCLAW_APT_CACHE_DIR:-/root/.cache/apt}
+OPENCLAW_PYTHON_VENV_DIR=${OPENCLAW_PYTHON_VENV_DIR:-/opt/openclaw-python}
 PIP_CACHE_DIR=${PIP_CACHE_DIR:-/root/.cache/pip}
 UV_CACHE_DIR=${UV_CACHE_DIR:-/root/.cache/uv}
 npm_config_cache=${npm_config_cache:-/root/.cache/npm}
@@ -13,9 +14,9 @@ BUN_INSTALL=${BUN_INSTALL:-/root/.bun}
 BUN_INSTALL_CACHE_DIR=${BUN_INSTALL_CACHE_DIR:-/root/.cache/bun/install}
 BUN_RUNTIME_TRANSPILER_CACHE_PATH=${BUN_RUNTIME_TRANSPILER_CACHE_PATH:-/root/.cache/bun/transpiler}
 SKIP_INSTALL=${SKIP_INSTALL:-${OPENCLAW_SKIP_INSTALL:-}}
-PATH="${BUN_INSTALL}/bin:${PATH}"
+PATH="/root/.local/bin:${OPENCLAW_PYTHON_VENV_DIR}/bin:${BUN_INSTALL}/bin:${PATH}"
 
-export PIP_CACHE_DIR UV_CACHE_DIR npm_config_cache PLAYWRIGHT_BROWSERS_PATH BUN_INSTALL BUN_INSTALL_CACHE_DIR BUN_RUNTIME_TRANSPILER_CACHE_PATH PATH
+export OPENCLAW_PYTHON_VENV_DIR PIP_CACHE_DIR UV_CACHE_DIR npm_config_cache PLAYWRIGHT_BROWSERS_PATH BUN_INSTALL BUN_INSTALL_CACHE_DIR BUN_RUNTIME_TRANSPILER_CACHE_PATH PATH
 
 mkdir -p \
   "${OPENCLAW_HOME}/workspace" \
@@ -156,6 +157,17 @@ install_extra_apt_packages() {
     "$@"
 }
 
+ensure_python_venv() {
+  [ -x "${OPENCLAW_PYTHON_VENV_DIR}/bin/python" ] && return 0
+
+  mkdir -p "$(dirname "${OPENCLAW_PYTHON_VENV_DIR}")"
+  if command -v uv >/dev/null 2>&1; then
+    uv venv --python python3 "${OPENCLAW_PYTHON_VENV_DIR}"
+  else
+    python3 -m venv "${OPENCLAW_PYTHON_VENV_DIR}"
+  fi
+}
+
 install_extra_python() {
   local marker="${EXTRA_STATE_DIR}/python.sha256"
   local current_hash requirement
@@ -168,20 +180,25 @@ install_extra_python() {
     "${OPENCLAW_HOME}/uv.txt")
   [ "${#requirements[@]}" -gt 0 ] || return 0
 
-  current_hash=$(printf '%s\n' "${requirements[@]}" | entries_hash)
+  current_hash=$(printf '%s\n' "venv=${OPENCLAW_PYTHON_VENV_DIR}" "${requirements[@]}" | entries_hash)
+  if [ -f "${marker}" ] && [ ! -x "${OPENCLAW_PYTHON_VENV_DIR}/bin/python" ]; then
+    rm -f "${marker}"
+  fi
   run_once_for_hash "${marker}" "${current_hash}" install_extra_python_packages "${requirements[@]}"
 }
 
 install_extra_python_packages() {
   local requirement_file status
+  ensure_python_venv
+
   requirement_file=$(mktemp)
   printf '%s\n' "$@" > "${requirement_file}"
 
   set +e
   if command -v uv >/dev/null 2>&1; then
-    uv pip install --system -r "${requirement_file}"
+    uv pip install --python "${OPENCLAW_PYTHON_VENV_DIR}/bin/python" -r "${requirement_file}"
   else
-    python3 -m pip install -r "${requirement_file}"
+    "${OPENCLAW_PYTHON_VENV_DIR}/bin/python" -m pip install -r "${requirement_file}"
   fi
   status=$?
   set -e

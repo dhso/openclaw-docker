@@ -17,7 +17,7 @@ ENV CHROME_BIN=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV NODE_ENV=production
-ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV OPENCLAW_PYTHON_VENV_DIR=/opt/openclaw-python
 ENV PIP_CACHE_DIR=/root/.cache/pip
 ENV UV_CACHE_DIR=/root/.cache/uv
 ENV npm_config_cache=/root/.cache/npm
@@ -25,7 +25,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
 ENV BUN_INSTALL=/root/.bun
 ENV BUN_INSTALL_CACHE_DIR=/root/.cache/bun/install
 ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=/root/.cache/bun/transpiler
-ENV PATH="/root/.local/bin:/root/.bun/bin:${PATH}"
+ENV PATH="/root/.local/bin:${OPENCLAW_PYTHON_VENV_DIR}/bin:/root/.bun/bin:${PATH}"
 ARG OPENCLAW_VERSION=2026.2.17
 ENV OPENCLAW_VERSION=${OPENCLAW_VERSION}
 
